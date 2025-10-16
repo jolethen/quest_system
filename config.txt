@@ -1,0 +1,163 @@
+==========================
+Quest System Setup Guide
+==========================
+
+1. Folder Structure
+-------------------
+Place this folder inside your Minetest "mods" directory like this:
+minetest/
+└── mods/
+    └── quest_system
+    
+All filenames must match exactly. No .txt.lua endings.
+
+
+2. Enabling the Mod
+-------------------
+1. Open Minetest.
+2. Go to "Select World" → choose your world → click "Configure".
+3. Enable "quest_system".
+4. Start the world.
+
+
+3. Command to Open Menu
+-----------------------
+In chat, type:
+/quests
+
+You will see a form window showing:
+- Daily Quests
+- Weekly Quests
+
+
+4. Editing or Adding Quests
+---------------------------
+All quest templates are defined in:
+quest_system/quests.lua
+
+Each quest looks like this example:
+
+quest_api.register_daily_quest({
+    name = "Chop 10 Wood",
+    type = "collect_wood",
+    target = 10,
+    reward = { item = "default:apple", count = 5 }
+})
+
+To add a new quest, copy one and change values.
+Example:
+
+quest_api.register_daily_quest({
+    name = "Mine 20 Stone",
+    type = "mine_stone",
+    target = 20,
+    reward = { item = "default:pick_steel", count = 1 }
+})
+
+After editing quests.lua, restart the world or run /reload.
+
+
+5. Quest Type System
+--------------------
+Each quest has a "type" that decides what event increases progress.
+Current available types:
+
+collect_wood  - triggered when you dig default:wood
+travel        - increases when player moves
+mine_stone    - can be added manually (see section 6)
+
+When progress reaches the "target" value, the quest is marked done.
+Players can then claim the reward using the "Claim" button.
+
+
+6. Adding Custom Quest Types
+----------------------------
+Open init.lua and find this part:
+
+minetest.register_on_dignode(function(pos, oldnode, digger)
+    if digger and digger:is_player() and oldnode.name == "default:wood" then
+        update_progress(digger:get_player_name(), "collect_wood", 1)
+    end
+end)
+
+To track new node types, copy this section and change the condition.
+Example for mining stone:
+
+minetest.register_on_dignode(function(pos, oldnode, digger)
+    if digger and digger:is_player() and oldnode.name == "default:stone" then
+        update_progress(digger:get_player_name(), "mine_stone", 1)
+    end
+end)
+
+Now quests with type = "mine_stone" will work.
+
+
+7. Adding Quests from Console
+-----------------------------
+If you have /lua permissions, you can register new quests without restarting:
+
+/lua quest_api.register_daily_quest({name="Kill 5 Mobs", type="kill_mob", target=5, reward={item="default:sword_steel", count=1}})
+
+Then run /quests to refresh and view the new quest.
+
+
+8. Quest Resets
+---------------
+- Daily quests reset every real-life day (based on system date).
+- Weekly quests reset every week (based on calendar week).
+- To manually reset all quests for a player, delete their data from mod storage:
+  Go to: worlds/<your_world>/mod_storage/
+  Delete the quest_system.mt entry or use this in console:
+  /lua storage:from_table({})
+
+
+9. Troubleshooting
+------------------
+If /quests shows nothing:
+- Check quests.lua for syntax errors or missing commas.
+- Verify folder name is quest_system and files are correct.
+
+If rewards do not appear:
+- Make sure reward item exists (example: default:apple).
+
+If progress does not increase:
+- Check that quest "type" matches the tracked event name.
+
+If mod fails to load:
+- Ensure init.lua exists and mod.conf has a valid name line:
+  name = quest_system
+
+
+10. Weekly Quests
+-----------------
+Weekly quests work the same as daily ones but are declared using:
+
+quest_api.register_weekly_quest({
+    name = "Travel 5000 Blocks",
+    type = "travel",
+    target = 5000,
+    reward = { item = "default:gold_ingot", count = 2 }
+})
+
+
+11. Example Test Flow
+---------------------
+1. Start your world and run /quests.
+2. Check a daily quest such as "Chop 10 Wood".
+3. Chop 10 tree blocks (default:wood).
+4. Open /quests again and see progress increase.
+5. When complete, press "Claim" to receive the reward.
+
+
+12. Notes
+---------
+- Progress is saved automatically using mod storage.
+- You can extend the system by adding more quest types or new triggers.
+- Quests are refreshed automatically each day/week.
+- To force all players to get new quests, restart the server after editing quests.lua.
+
+
+==========================
+End of Guide
+==========================
+  
